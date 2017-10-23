@@ -284,7 +284,7 @@ public class BasicBuilder {
       }
       if (ct.contains(ChildType.TEXT))
         mixed = true;
-      if (particle == null && mixed && attributeUses.equals(AttributeGroup.EMPTY))
+      if (particle == null && mixed)
         type = new ComplexTypeSimpleContent(attributeUses,
                                             makeStringType(p.getSourceLocation()));
       else if (ct.contains(ChildType.DATA) && !mixed && particle == null) {
@@ -455,7 +455,7 @@ public class BasicBuilder {
     public AttributeUse visitMixed(MixedPattern p) {
       return p.getChild().accept(this);
     }
-    
+
     public AttributeUse visitZeroOrMore(ZeroOrMorePattern p) {
       return p.getChild().accept(optionalAttributeUseBuilder);
     }
