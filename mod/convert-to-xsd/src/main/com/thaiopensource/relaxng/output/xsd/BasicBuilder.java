@@ -267,26 +267,30 @@ public class BasicBuilder {
    */
   class ParticleBuilder extends AbstractPatternVisitor<Particle> {
     public Particle visitElement(ElementPattern p) {
+      final Pattern child = p.getChild();
+      final ChildType ct = si.getChildType(child);
+
+      final AttributeUse attributeUses = ct.contains(ChildType.ATTRIBUTE)
+        ? child.accept(attributeUseBuilder)
+        : AttributeGroup.EMPTY;
+
       ComplexType type;
-      Pattern child = p.getChild();
-      ChildType ct = si.getChildType(child);
-      AttributeUse attributeUses;
-      if (ct.contains(ChildType.ATTRIBUTE))
-        attributeUses = child.accept(attributeUseBuilder);
-      else
-        attributeUses = AttributeGroup.EMPTY;
       Particle particle = null;
       boolean mixed = false;
+
       if (ct.contains(ChildType.ELEMENT)) {
+        particle = child.accept(particleBuilder);
+
         if (ct.contains(ChildType.DATA))
           mixed = true;  // TODO give an error
-        particle = child.accept(particleBuilder);
       }
+
       if (ct.contains(ChildType.TEXT))
         mixed = true;
-      if (particle == null && mixed)
-        type = new ComplexTypeSimpleContent(attributeUses,
-                                            makeStringType(p.getSourceLocation()));
+
+      if (particle == null && mixed) {
+        type = new ComplexTypeSimpleContent(attributeUses, makeStringType(p.getSourceLocation()));
+      }
       else if (ct.contains(ChildType.DATA) && !mixed && particle == null) {
         SimpleType simpleType = child.accept(simpleTypeBuilder);
         if (ct.contains(ChildType.EMPTY))
@@ -297,18 +301,22 @@ public class BasicBuilder {
         type = new ComplexTypeNotAllowedContent();
       else
         type = new ComplexTypeComplexContent(attributeUses, particle, mixed);
+
       List<NameNameClass> names = NameClassSplitter.split(p.getNameClass());
       Wildcard[] wc = splitElementWildcard(WildcardBuilder.createWildcard(p.getNameClass(), inheritedNamespace));
       Annotation annotation = makeAnnotation(p);
       Annotation elementAnnotation = names.size() + wc.length == 1 ? annotation : null;
       List<Particle> result = new Vector<Particle>();
+
       for (NameNameClass name : names)
         result.add(new Element(p.getSourceLocation(), elementAnnotation, makeName(name), type));
-      for (int i = 0; i < wc.length; i++)
-        result.add(new WildcardElement(p.getSourceLocation(), elementAnnotation, wc[i]));
-      if (result.size() == 1)
-        return result.get(0);
-      return new ParticleChoice(p.getSourceLocation(), annotation, result);
+
+      for (Wildcard aWc : wc)
+        result.add(new WildcardElement(p.getSourceLocation(), elementAnnotation, aWc));
+
+      return result.size() == 1
+        ? result.get(0)
+        : new ParticleChoice(p.getSourceLocation(), annotation, result);
     }
 
     public Particle visitOneOrMore(OneOrMorePattern p) {
