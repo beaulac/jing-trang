@@ -343,6 +343,12 @@ class ComplexTypeSelector extends SchemaWalker {
 
   ComplexTypeComplexContentExtension transformComplexContent(ComplexTypeComplexContent ct) {
     String base = particleBase(ct.getParticle());
+
+    //FIXME GROSS WORKAROUND TO GET STRING EXTENSION FOR COMPLEX TYPE!
+    if (base == null && ct.isMixed()) {
+      base = "xs:string";
+    }
+
     if (base != null) {
       Particle particle = transformParticle(ct.getParticle());
       return new ComplexTypeComplexContentExtension(transformAttributeUses(ct.getAttributeUses()),

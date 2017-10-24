@@ -940,7 +940,9 @@ public class BasicOutput {
 
   private void outputComplexTypeComplexContent(ComplexTypeComplexContentExtension t, String name, Annotated parent) {
     String base = t.getBase();
-    if (base != null) {
+
+    //FIXME GROSS WORKAROUND TO GET STRING EXTENSION FOR COMPLEX TYPE!
+    if (base != null && !base.equals(xs("string"))) {
       base = qualifyRef(schema.getGroup(base).getParentSchema().getUri(), base);
       if (name == null
           && t.getParticle() == null
